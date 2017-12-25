@@ -4,7 +4,13 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "node soccer.js"
+    "prepublish": "npm run build",
+    "flow": "flow",
+    "build": "babel src -d dist",
+    "clean": "rimraf dist",
+    "check": "flow check",
+    "dev": "concurrently \"npm run build -- --watch\" \"nodemon dist/index.js\"",
+    "prod": "pm2 startOrRestart ecosystem.config.js --env production"
   },
   "keywords": [],
   "author": "Alexander Morgunov <fxl@list.ru>",
@@ -17,5 +23,22 @@
     "moment": "^2.20.1",
     "node-schedule": "^1.2.5",
     "nodemailer": "^4.4.1"
+  },
+  "devDependencies": {
+    "babel-cli": "^6.26.0",
+    "babel-eslint": "^8.0.3",
+    "babel-plugin-transform-class-properties": "^6.24.1",
+    "babel-plugin-transform-object-rest-spread": "^6.26.0",
+    "babel-preset-env": "^1.6.1",
+    "babel-preset-flow": "^6.23.0",
+    "concurrently": "^3.5.1",
+    "eslint": "^4.13.0",
+    "eslint-config-airbnb-base": "^12.1.0",
+    "eslint-plugin-flowtype": "^2.40.0",
+    "eslint-plugin-import": "^2.8.0",
+    "flow-bin": "^0.61.0",
+    "nodemon": "^1.12.5",
+    "pm2": "^2.9.1",
+    "rimraf": "^2.6.2"
   }
 }

@@ -6,5 +6,6 @@ Play football :soccer: be happy :ok_hand:
 cp .env.defaults .env
 
 yarn # install dependencies
-yarn run start # run like-cron command every Monday at 10:00
+yarn run dev # run like-cron command every Monday at 10:00 (use nodemon)
+yarn run prod # run with pm2
 ```
