@@ -1,19 +1,13 @@
-/* @flow */
+require('dotenv-extended').load();
 
-import dotenv from 'dotenv-extended';
-import schedule from 'node-schedule';
+const schedule = require('node-schedule');
+const config = require('config');
+const weeklyMailDeliveryJob = require('./commands/weeklyMailDelivery');
 
-import weeklyMailDeliveryJob from './commands/weeklyMailDelivery';
-
-// load enviroment variables
-dotenv.load();
-
-// every monday on 10:00
-schedule.scheduleJob('00 10 * * 1', async () => {
-    return weeklyMailDeliveryJob();
+schedule.scheduleJob(config.deliveryCron, async () => {
+    return await weeklyMailDeliveryJob();
 });
 
-
-process.on('SIGINT', async () => {
-    process.exit(0);
+process.on('SIGINT', () => {
+    process.exit(0); // eslint-disable-line no-process-exit
 });

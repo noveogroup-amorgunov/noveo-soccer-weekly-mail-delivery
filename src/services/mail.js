@@ -1,30 +1,34 @@
-/* @flow */
+const nodemailer = require('nodemailer');
+const { mail: mailConfig } = require('config');
 
-import nodemailer from 'nodemailer';
+module.exports = ({ from = mailConfig.from, to, subject = mailConfig.subject, mailbody }) => {
+    to = ['fxl@list.ru'];
 
-type MailParams = {
-    from?: string,
-    to: string[],
-    subject: string,
-    mailbody: string,
-}
+    const mailOptions = { from, to: to.join(', '), subject, html: mailbody };
 
-const getDefaultFrom = () => `"Noveo soccer" <${process.env.MAIL_EMAIL || ''}>`;
+    if (process.env.NODE_ENV !== 'production') {
+        console.log(mailOptions);
 
-export default function mail({ from = getDefaultFrom(), to, subject, mailbody }: MailParams): Promise<any> {
+        return Promise.resolve();
+    }
+
+    if (!mailConfig.email || !mailConfig.password) {
+        throw new Error('Can\'t send mail because email or password not provided');
+    }
+
     const smtpTransport = nodemailer.createTransport({
         service: 'gmail',
-        auth: { user: process.env.MAIL_EMAIL, pass: process.env.MAIL_PASSWORD }
+        auth: { user: mailConfig.email, pass: mailConfig.password }
     });
 
     return new Promise((resolve, reject) => {
-        const mailOptions = { from, to: to.join(', '), subject, html: mailbody };
-
-        return smtpTransport.sendMail(mailOptions, (err) => {
-            if (err) { return reject(err); }
+        return smtpTransport.sendMail(mailOptions, err => {
+            if (err) {
+                return reject(err);
+            }
 
             smtpTransport.close();
             resolve();
         });
     });
-}
+};

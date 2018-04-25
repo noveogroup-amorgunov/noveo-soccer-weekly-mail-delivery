@@ -1,44 +1,41 @@
 {
-  "name": "noveo-soccer-weekly-mail-delivery",
-  "version": "0.0.1",
+  "name": "soccer-weekly-mail-delivery",
+  "version": "0.0.2",
   "description": "",
   "main": "index.js",
   "scripts": {
-    "prepublish": "npm run build",
-    "flow": "flow",
-    "build": "babel src -d dist",
-    "clean": "rimraf dist",
-    "check": "flow check",
-    "dev": "concurrently \"npm run build -- --watch\" \"nodemon dist/index.js\"",
-    "prod": "pm2 startOrRestart ecosystem.config.js --env production"
+    "dev": "nodemon index",
+    "prod": "pm2 startOrRestart ecosystem.config.js --env production",
+    "test": "mocha tests/**/*.spec.js --exit"
   },
   "keywords": [],
   "author": "Alexander Morgunov <fxl@list.ru>",
   "license": "ISC",
   "dependencies": {
-    "axios": "^0.17.1",
-    "axios-jsonp": "^1.0.1",
-    "dotenv-extended": "^2.0.1",
-    "fbgraph": "^1.4.1",
-    "moment": "^2.20.1",
-    "node-schedule": "^1.2.5",
-    "nodemailer": "^4.4.1"
+    "axios": "0.17.1",
+    "config": "1.30.0",
+    "dotenv-extended": "2.0.1",
+    "moment": "2.20.1",
+    "node-schedule": "1.2.5",
+    "nodemailer": "4.4.1"
   },
   "devDependencies": {
-    "babel-cli": "^6.26.0",
-    "babel-eslint": "^8.0.3",
-    "babel-plugin-transform-class-properties": "^6.24.1",
-    "babel-plugin-transform-object-rest-spread": "^6.26.0",
-    "babel-preset-env": "^1.6.1",
-    "babel-preset-flow": "^6.23.0",
-    "concurrently": "^3.5.1",
-    "eslint": "^4.13.0",
-    "eslint-config-airbnb-base": "^12.1.0",
-    "eslint-plugin-flowtype": "^2.40.0",
-    "eslint-plugin-import": "^2.8.0",
-    "flow-bin": "^0.61.0",
-    "nodemon": "^1.12.5",
-    "pm2": "^2.9.1",
-    "rimraf": "^2.6.2"
+    "eslint": "4.13.0",
+    "eslint-config-iddqd": "1.2.0",
+    "eslint-plugin-import": "2.8.0",
+    "mocha": "5.1.1",
+    "nock": "9.2.5",
+    "nodemon": "1.12.5",
+    "pm2": "2.9.1",
+    "supertest": "3.0.0"
+  },
+  "eslintConfig": {
+    "extends": "iddqd/node",
+    "parserOptions": {
+      "ecmaVersion": 2017,
+      "ecmaFeatures": {
+        "experimentalObjectRestSpread": true
+      }
+    }
   }
 }

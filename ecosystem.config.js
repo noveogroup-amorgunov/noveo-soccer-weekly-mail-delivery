@@ -6,7 +6,7 @@ module.exports = {
     apps: [
         {
             name: 'noveo-soccer-weekly-delivery',
-            script: 'dist/index.js',
+            script: 'index.js',
             env_development: { watch: true, NODE_ENV: 'development' },
             env_production: { NODE_ENV: 'production' }
         },

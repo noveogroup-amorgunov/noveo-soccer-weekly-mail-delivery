@@ -1,32 +1,52 @@
-/* @flow */
+const config = require('config');
+const sendEmail = require('../services/mail');
+const WeatherService = require('../services/weather');
+const GoogleSpreadsheetsService = require('../services/googleSpreadsheets');
+const messageTemplate = require('../templates/messageTemplate.json');
 
-import sendEmail from '../services/mail';
-import GoogleSpreadsheets from '../services/googleSpreadsheets';
+const getWeatherString = async trainDay => {
+    if (!config.weatherApi.isEnabled) {
+        return '';
+    }
 
-function getEmailMessage(days: string): string {
-    return `Всем привет!<br />
-    <p>Отмечаемся в гугл-доке (<a href="https://goo.gl/REKNRq">https://goo.gl/REKNRq</a>) на эту неделю (${days}) кто хочет поиграть.</p>
-    <p>Как только набирается <strong>9-10 человек</strong>, мы бронируем и играем.</p><br/>
-    <p>C уважением, <b>Noveo soccer weekly mail delivery</b><br><br>
-    <small style="color: #999">Манеж, где играем: <a href="http://eliga.ru/booking/">http://eliga.ru/booking/</a>. Чтобы отписаться от рассылки, удалите свой email из гугл таблички из письма.</small>
-    </p>
-    `;
-}
+    const weatherService = new WeatherService(config.weatherApi);
 
-export default async function run() {
+    return await weatherService.getByDate(trainDay);
+
+};
+
+const getTableData = async () => {
+    const table = await GoogleSpreadsheetsService.load(config.googleTable);
+    const trainDaysString = table.getTrainDaysString();
+    const to = table.getEmails();
+    const trainDay = table.getTrainDay();
+
+    return { trainDaysString, to, trainDay };
+};
+
+module.exports = async () => {
     try {
-        const table = await GoogleSpreadsheets.load(process.env.GOOGLE_TABLE_ID || '');
-        const content: string | false = table.getDayOnThisWeek();
+        // Выгружаем данные из гугл-таблички
+        const { trainDaysString, to, trainDay } = await getTableData();
 
-        if (!content) {
+        if (!trainDay) {
+            console.warn('Days for playing not found, nothing delivery, sorry man');
+
             return false;
         }
 
-        const to: string[] = table.getEmails();
-        const mailbody: string = getEmailMessage(content);
+        // Для тренировки загружаем погоду по дате/времени тренировки
+        const weatherString = await getWeatherString(trainDay);
 
-        await sendEmail({ to, subject: 'Noveo soccer weekly mail delivery', mailbody });
+        // Формируем сообщение для рассылки
+        const message = messageTemplate.content
+            .replace(/{link}/g, config.googleTable.link)
+            .replace('{days}', trainDaysString)
+            .replace('{weather}', weatherString);
+
+        // Отправляем email всем мамкиным футболистам
+        await sendEmail({ to, mailbody: message });
     } catch (err) {
         console.error(err);
     }
-}
+};
