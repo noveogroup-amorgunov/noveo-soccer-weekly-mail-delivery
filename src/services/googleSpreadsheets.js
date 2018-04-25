@@ -1,73 +1,102 @@
-/* @flow */
+const axios = require('axios');
+const moment = require('moment');
+const config = require('config');
 
-import axios from 'axios';
-import moment from 'moment';
-
-type Cell = {
-    row: string,
-    col: string,
-    $t: string
-}
-
-export default class GoogleSpreadsheets {
-    static urlTemplate: string = 'https://spreadsheets.google.com/feeds/cells/{id}/1/public/values?alt=json-in-script';
-    _data: Cell[];
-
-    constructor(cells: Cell[]) {
+class GoogleSpreadsheets {
+    constructor(cells) {
         this._data = cells;
     }
 
-    static async load(id: string): any {
-        const res = await axios(this.urlTemplate.replace('{id}', id));
-        const data = JSON.parse(res.data.slice(0, res.data.length - 2).replace('gdata.io.handleScriptLoaded(', ''));
-        const cells = data.feed.entry.map(cell => cell.gs$cell);
+    static async load({ id, url }) {
+        if (!id) {
+            throw new Error('GoogleSpreadsheets.load: Argument `id` is required');
+        }
+        const result = await axios(url.replace('{id}', id));
+        const json = result.data
+            .slice(0, result.data.length - 2)
+            .replace('gdata.io.handleScriptLoaded(', '');
+        const data = JSON.parse(json);
+
+        const cells = data.feed.entry
+            .map(cell => cell.gs$cell)
+            .map(cell => {
+                const formattedCell = {
+                    $t: cell.$t,
+                    row: Number(cell.row),
+                    col: Number(cell.col)
+                };
+
+                if (cell.numericValue) {
+                    formattedCell.numericValue = cell.numericValue;
+                }
+
+                return formattedCell;
+            });
+
         return new GoogleSpreadsheets(cells);
     }
 
-    getCell(row: string, col: string): ?Cell {
-        return this._data.filter(cell => +cell.row === +row && +cell.col === +col)[0];
+    getCell(row, col) {
+        return this._data.filter(cell => cell.row === row && cell.col === col)[0];
     }
 
-    getCellByContent(content: string): ?Cell {
+    getCellByContent(content) {
         return this._data.filter(cell => cell.$t === content)[0];
     }
 
-    getRows(row: string): Cell[] {
-        return this._data.filter(cell => +cell.row === +row);
+    getRows(row) {
+        return this._data.filter(cell => cell.row === row);
     }
 
-    getColumns(col: string): Cell[] {
-        return this._data.filter(cell => +cell.col === +col);
+    getColumns(col) {
+        return this._data.filter(cell => cell.col === col);
     }
 
-    getEmails(): string[] {
-        return this.getColumns((this.getCellByContent('email'): any).col)
+    getEmails() {
+        return this.getColumns(this.getCellByContent('email').col)
             .slice(1)
             .map(cell => cell.$t);
     }
 
-    getDayOnThisWeek() {
-        const days = this.getRows('1');
-        const daysOnThisWeek = days.filter((d) => {
+    getTrainDay() {
+        const trainDays = this.getTrainDays();
+
+        return trainDays.length && trainDays[0].date;
+    }
+
+    getTrainDaysString() {
+        const trainDays = this.getTrainDays();
+
+        return trainDays.length === 0 ? false : trainDays
+            .map(cell => cell.$t.replace('\n', ' '))
+            .join(', ');
+    }
+
+    getTrainDays() {
+        const days = this.getRows(1);
+        const period = config.daysPeriodForSearchTrain;
+
+        const trainDays = days.map(d => {
             const date = d.$t.match(/\d{2}\/\d{2}\/\d{2}/);
+
             if (date && date[0]) {
                 const [day, month, year] = date[0].split('/');
                 const matchDay = moment(`20${year}-${month}-${day}`);
-                return (matchDay > moment() && matchDay < moment().add(7, 'days'));
+                const isTruthDay = (matchDay > moment() && matchDay < moment().add(period, 'days'));
+
+                // @TODO: Парсить начало тренировки из таблички
+                return isTruthDay && { ...d, date: matchDay.hour(19) };
             }
+
             return false;
-        });
+        }).filter(Boolean);
 
-        const cols = daysOnThisWeek.map(cell => cell.col);
+        if (trainDays.length === 0) {
+            console.warn('Days for playing not found, nothing delivery, sorry man');
+        }
 
-        return cols.length === 0 ? false : cols.map((col) => {
-            const cell = this.getCell('1', col);
-            return (cell: any).$t.replace('\n', ' ');
-        }).join(', ');
+        return trainDays;
     }
 }
 
-/* const totalPeopleComing = getCellByContent(parsed, 'Точно придут');
-const totalPeopleMayBeComing = getCellByContent(parsed, 'В лучшем случае');
-console.log(getCell(parsed, totalPeopleComing.row, cols[1]));
-console.log(getCell(parsed, totalPeopleMayBeComing.row, cols[1])); */
+module.exports = GoogleSpreadsheets;

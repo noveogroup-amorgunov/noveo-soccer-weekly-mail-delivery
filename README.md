@@ -1,11 +1,80 @@
-# Noveo soccer weekly mail delivery
+# Еженедельная футбольная рассылка
 
-Play football :soccer: be happy :ok_hand:
+Играй в футбол :soccer: будь счастлив :ok_hand:
+
+![](https://github.com/noveogroup-amorgunov/noveo-soccer-weekly-mail-delivery/raw/master/src/images/email-example.png)
+
+## Настройка рассылки
+
+Проект создан для еженедельной рассылки (напоминашек) о том, что-бы игроки не забывали отмечаться, смогут ли придти на тренировку.
+
+### Настройка внешних сервисов
+
+Для работы проекты нужно иметь аккаунт в gmail.com и сделать аккаунт доступным для использования небезопасными приложениями (https://myaccount.google.com/lesssecureapps),
+чтобы модуль nodemailer мог делать рассылку через гугл-почту.
+
+Далее нужно зарегаться в https://openweathermap.org/ для получения погоды на стадиоде.
+После регистрации сделать тестовый запрос в апи с координатами города и получить id города, который нужно поместить в `config/default.js`.
+
+Например мы играем на стадионе в городе Кольцово, ищем координаты города, например вытягиваем из url в 2gis (https://2gis.ru/novosibirsk?queryState=center%2F83.185226%2C54.937251%2Fzoom%2F17).
+Далее вставляем эти координаты в запрос к погоде: https://api.openweathermap.org/data/2.5/forecast?lat=54.93&lon=83.18&appid={appid}.
+Вернется json-объект с полем city, у которого можно будет вытащить id города:
+
+```json
+{
+  "cod": "200",
+  "city": {
+    "id": 1502847,
+    "name": "Koltsovo",
+    "coord": {
+      "lat": 54.9376,
+      "lon": 83.1825
+    },
+    "country": "RU",
+    "population": 9976
+  }
+}
+```
+
+И последнее, нужно создать табличку по следующему формату и опубликовать ее для загрузки из сервиса (https://coderwall.com/p/duapqq/use-a-google-spreadsheet-as-your-json-backend): 
+
+![](https://github.com/noveogroup-amorgunov/noveo-soccer-weekly-mail-delivery/raw/master/src/images/table-preview.png)
+
+- Первая колонка имена игроков
+- Вторая, email-ы, кому рассылка будет приходить
+- Потом идут колонки с датами в формате "Чт 05/04/18 c 22:00-23:00" и +/- игроков
+
+### Настройка проекта
+
+Теперь можно приступать к настройке самого проекта:
+
+Сначала скопировать переменные среды:
 
 ```bash
-cp .env.defaults .env
+cp .env.defaults .env # копируем переменные среды
+```
 
-yarn # install dependencies
-yarn run dev # run like-cron command every Monday at 10:00 (use nodemon)
-yarn run prod # run with pm2
+В этом файле нужно указать email и пароль от почты, id таблицы, ссылку на таблицу, ключ в апи погоды, а если играем в зале, по парсинг погоды можно выключить удалив переменную `ENABLE_WEATHER`.
+
+```
+MAIL_EMAIL=
+MAIL_PASSWORD=
+GOOGLE_TABLE_ID=
+GOOGLE_TABLE_SHORT_LINK=
+OPEN_WEATHER_API_KEY=
+ENABLE_WEATHER=1
+```
+
+Все настройки лежат в конфиге `config/default.js`. Можно конфигурировать день и время запуска рассылки,
+период (дней) через который начиная от текущего дня ищутся тренировки (например при =7, треньки будут искаться на неделю вперед),
+название рассылки итд.
+
+Текст рассылки лежит в `src/templates/messageTemplate.json`.
+
+## Запуск рассылки
+
+```bash
+npm install # установливаем зависимости
+npm run dev # запуск команд для рассылка как в crontab (используя nodemon)
+npm run prod # запуск с помощью процесс менеджера pm2 (для продакшена)
 ```
