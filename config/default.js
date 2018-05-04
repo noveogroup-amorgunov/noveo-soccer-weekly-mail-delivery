@@ -4,7 +4,7 @@ module.exports = {
      * Запускаем каждую пятницу в 10:00
      * @see https://crontab.guru/#00_10_*_*_5
      */
-    deliveryCron: '00 10 * * 5',
+    deliveryCron: '00 5 * * 5',
     daysPeriodForSearchTrain: 7,
     googleTable: {
         id: process.env.GOOGLE_TABLE_ID,

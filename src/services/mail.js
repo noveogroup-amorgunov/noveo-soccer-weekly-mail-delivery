@@ -2,8 +2,6 @@ const nodemailer = require('nodemailer');
 const { mail: mailConfig } = require('config');
 
 module.exports = ({ from = mailConfig.from, to, subject = mailConfig.subject, mailbody }) => {
-    to = ['fxl@list.ru'];
-
     const mailOptions = { from, to: to.join(', '), subject, html: mailbody };
 
     if (process.env.NODE_ENV !== 'production') {
